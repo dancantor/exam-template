@@ -1,0 +1,13 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-button class="ion-no-padding" fill="none" (click)="navigateBack()">Back</ion-button>
+    <ion-title>Easiest Activities</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-list>
+    <app-activity-item-easy (updateActivityEmitter)="updateIntensity($event)" *ngFor="let activity of easiestActivities$ | async" [activity]="activity">
+    </app-activity-item-easy>
+  </ion-list>
+</ion-content>

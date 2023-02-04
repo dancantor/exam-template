@@ -1,0 +1,32 @@
+<ion-card [button]="!shouldDisplayEdit" (click)="onItemClick()">
+  <ion-card-header>
+    <ion-card-title>{{activity.name}}</ion-card-title>
+    <ion-card-subtitle>{{activity.category}}</ion-card-subtitle>
+  </ion-card-header>
+
+  <ion-card-content>
+    <div class="additional-info">
+      <div>Completion date: {{activity.date | date: 'dd/MM/yyyy'}}</div>
+      <div>Time spent: {{activity.time}} minutes</div>
+      <div>Intensity: {{activity.intensity}}</div>
+    </div>
+    <div class="description">{{activity.description}}</div>
+    <div class="edit-section" *ngIf="shouldDisplayEdit" (click)="stopPropagation($event)">
+        <mat-form-field appearance="fill">
+          <mat-label>Intensity</mat-label>
+          <input
+            [(ngModel)]="intensityValue"
+            matInput
+            placeholder="easy/medium/hard"
+            pattern="^(easy|medium|hard)$"
+            required
+            name="intensity"
+            #intensity="ngModel"
+          >
+          <mat-error [hidden]="intensity.valid">Intensity is not valid</mat-error>
+        </mat-form-field>
+      <ion-button [disabled]="!isIntensityValid()" (click)="updateIntensity()">Change Intensity</ion-button>
+    </div>
+  </ion-card-content>
+</ion-card>
+

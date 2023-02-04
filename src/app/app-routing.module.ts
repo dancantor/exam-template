@@ -1,19 +1,25 @@
+import { AddUpdateGamePage } from './pages/add-update-game/add-update-game.page';
+import { GameLibraryListPage } from './pages/game-library-list/game-library-list.page';
 import { NgModule } from '@angular/core';
 import { PreloadAllModules, RouterModule, Routes } from '@angular/router';
 
 const routes: Routes = [
   {
     path: 'home',
-    loadChildren: () => import('./home/home.module').then( m => m.HomePageModule)
+    loadChildren: () => import('./pages/game-library-list/game-library-list.module').then( m => m.GameLibraryListPageModule)
   },
   {
-    path: 'message/:id',
-    loadChildren: () => import('./view-message/view-message.module').then( m => m.ViewMessagePageModule)
+    path: 'add-activity',
+    loadChildren: () => import('./pages/add-update-game/add-update-game.module').then( m => m.AddUpdateGamePageModule)
   },
   {
     path: '',
     redirectTo: 'home',
     pathMatch: 'full'
+  },
+  {
+    path: 'easiest-activities',
+    loadChildren: () => import('./pages/easiest-activities/easiest-activities.module').then( m => m.EasiestActivitiesPageModule)
   },
 ];
 

@@ -1,0 +1,38 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-title>Your Collection</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-list>
+    <div class="item-with-margin" *ngFor="let category of (categoriesList$ | async)">
+      <ion-item button (click)="expandCategory(category.name)">
+        <ion-label>
+          {{category.name}}
+        </ion-label>
+      </ion-item>
+      <ion-list class="activities-list" *ngIf="category.name === currentlyExpanded">
+        <app-game-item *ngFor="let activity of (activitiesByCategory$ | async)" [activity]="activity" (deleteGameEmitter)="onDeleteActivity($event)">
+        </app-game-item>
+      </ion-list>
+    </div>
+  </ion-list>
+</ion-content>
+
+<ion-footer class="ion-no-border">
+  <ion-toolbar>
+    <div class="button-container">
+      <ion-button shape="circle" class="ion-no-padding" (click)="navigateToAddActivity()">
+        <ion-icon class="plus-icon" slot="icon-only" name="add-outline">
+
+        </ion-icon>
+      </ion-button>
+      <ion-button shape="circle" class="ion-no-padding" (click)="navigateToEasiestActivities()">
+        <ion-icon class="plus-icon" slot="icon-only" name="barbell-outline">
+
+        </ion-icon>
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

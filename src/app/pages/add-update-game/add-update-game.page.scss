@@ -1,0 +1,16 @@
+
+form {
+  &:first-child {
+    margin-top: 50px;
+  }
+  mat-form-field {
+    width: 100%;
+    padding: 0px 40px;
+    border-radius: 20px;
+  }
+  ion-button {
+    --color: white;
+    float: right;
+    margin: 0px 40px 40px 0px;
+  }
+}
