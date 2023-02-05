@@ -5,13 +5,18 @@ import { combineLatest, tap } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { ActivityApiService } from './../../api/services/activity-api.service';
 import { ActivityRepository } from './../repository/activity.repo';
+import { LoadingService } from './loading.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SyncronizationService {
 
-  constructor(private activityRepo: ActivityRepository, private activityApiService: ActivityApiService) { }
+  constructor(
+    private activityRepo: ActivityRepository,
+    private activityApiService: ActivityApiService,
+    private loadingService: LoadingService
+  ) { }
 
   public updateLocalFromServerCategories() {
     combineLatest([this.activityRepo.getAllCategories(), this.activityApiService.getCategories()]).pipe(
@@ -22,7 +27,8 @@ export class SyncronizationService {
           }
         })
       })
-    ).subscribe();
+    ).subscribe(() => {
+    });
     // const allActivitiesByCategory = this.activityApiService.getCategories().pipe(
     //   exhaustMap(categories => {
     //     const activitiesArray: Observable<ActivityDto[]>[] = []
@@ -49,10 +55,11 @@ export class SyncronizationService {
       tap(([locatActivities, serverActivities]) => {
         serverActivities.forEach((activityServer: ActivityDto) => {
           if (!locatActivities.some((activityLocal: ActivityDocument) => activityServer.id === +activityLocal.activityId)) {
-            this.activityRepo.insert(mapActivityToDocument(mapDtoToModel(activityServer)));
+            this.activityRepo.insert(mapActivityToDocument(mapDtoToModel(activityServer))).subscribe();
           }
         })
       })
-    );
+    ).subscribe(() => {
+    });
   }
 }

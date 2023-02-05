@@ -6,6 +6,9 @@
 </ion-header>
 
 <ion-content>
+  <div class="spinner-container">
+    <ion-spinner name="circular" *ngIf="loading$ | async"></ion-spinner>
+  </div>
   <form [formGroup]="activityForm">
     <mat-form-field appearance="fill">
       <mat-label>Name</mat-label>

@@ -1,11 +1,12 @@
+import { LoadingService } from './loading.service';
 import { SyncronizationService } from './syncronization.service';
 import { Injectable } from '@angular/core';
 import { Network } from '@capacitor/network';
 import { unique } from 'radash';
-import { catchError, EMPTY, exhaustMap, finalize, first, from, map, Observable, of, shareReplay, throwError } from 'rxjs';
+import { catchError, EMPTY, exhaustMap, finalize, first, from, map, Observable, of, shareReplay, tap, throwError } from 'rxjs';
 import { Activity, Category } from '../model/activity';
 import { ActivityRepository } from '../repository/activity.repo';
-import { mapDtoToModel } from './../../api/dtos/activity-dto';
+import { ActivityDto, mapDtoToModel, mapModelToDto } from './../../api/dtos/activity-dto';
 import { ActivityApiService } from './../../api/services/activity-api.service';
 import { compareActivitiesByIntensity, mapActivityToDocument, mapDocumentToActivity } from './../model/activity';
 import { NotificationService } from './notification.service';
@@ -18,7 +19,8 @@ export class ActivityService {
     private repo: ActivityRepository,
     private notificationService: NotificationService,
     private activityApiService: ActivityApiService,
-    private syncronizationService: SyncronizationService
+    private syncronizationService: SyncronizationService,
+    private loadingService: LoadingService
   ) { }
 
   public getAll(): Observable<Activity[]> {
@@ -26,7 +28,7 @@ export class ActivityService {
     return this.repo.getAll().pipe(
       map(activityDocuments => activityDocuments.map(activityDocument => mapDocumentToActivity(activityDocument))),
       catchError(() => {
-        this.notificationService.displayMessage('Error', 'Error on fetching activities');
+        this.notificationService.displayToastMessage('Error', 'Error on fetching activities');
         console.log('getAll() error');
         return of([])
       }),
@@ -41,7 +43,7 @@ export class ActivityService {
     return this.repo.getById(id).pipe(
       map(activityDocument => mapDocumentToActivity(activityDocument)),
       catchError(() => {
-        this.notificationService.displayMessage('Error', 'Error on fetching activities');
+        this.notificationService.displayToastMessage('Error', 'Error on fetching activities');
         console.log('getById() error');
         return EMPTY;
       }),
@@ -54,6 +56,7 @@ export class ActivityService {
   public getAllByCategory(category: string): Observable<Activity[]> {
     console.log(`getAllByCategory() entered, category: ${category}`);
     return from(Network.getStatus()).pipe(
+      first(),
       exhaustMap(networkStatus => {
         if (networkStatus.connected) {
           this.syncronizationService.updateLocalFromServerActivitiesbyCategories(category);
@@ -69,7 +72,7 @@ export class ActivityService {
     return this.repo.getAllByCategory(category).pipe(
       map(activityDocuments => activityDocuments.map(activityDocument => mapDocumentToActivity(activityDocument))),
       catchError(() => {
-        this.notificationService.displayMessage('Error', 'Error on fetching activities by category');
+        this.notificationService.displayToastMessage('Error', 'Error on fetching activities by category');
         console.log('getAllByCategoryDb() error');
         return of([]);
       }),
@@ -95,7 +98,7 @@ export class ActivityService {
     console.log(`getAllCategoriesDb() entered`);
     return this.repo.getAllCategories().pipe(
       catchError(() => {
-        this.notificationService.displayMessage('Error', 'Error on fetching categories');
+        this.notificationService.displayToastMessage('Error', 'Error on fetching categories');
         console.log('getAllCategoriesDb() error');
         return of([]);
       }),
@@ -106,46 +109,58 @@ export class ActivityService {
   }
 
   public insert(activity: Activity): void {
-    console.log(`insert() entered, activity: ${activity}`);
-    if (activity.activityId === undefined) {
-      this.repo.getAll().pipe(first()).subscribe(activityDocuments => {
-        var generatedId = (Math.floor(Math.random() * 100) + 1).toString();
-        while (activityDocuments.find(activity => activity.activityId === generatedId)){
-          generatedId = (Math.floor(Math.random() * 100) + 1).toString();
+    from(Network.getStatus()).pipe(
+      tap(networkStaus => {
+        if (networkStaus.connected) {
+          this.activityApiService.insert(mapModelToDto(activity)).pipe(first()).subscribe((activity: ActivityDto) => {
+            this.insertDb(mapDtoToModel(activity));
+          });
         }
-        activity.activityId = generatedId;
-        this.repo.insert(mapActivityToDocument(activity)).pipe(
-          catchError((er) => {console.error(er) ;return throwError(() => activity)}),
-        )
-        .subscribe({
-          next: (activity) => {this.notificationService.displayMessage('Success', `The activity ${activity.name} was added successfully`)},
-          error: (err) => {this.notificationService.displayMessage('Error', `Error on adding ${err.name}`)},
-          complete: () => {console.log(`insert() exited`)}
-        })
+        else {
+          this.notificationService.displayToastMessage('Error', 'Inserting a new activity is not available offline');
+        }
       })
-      return;
-    }
+    ).subscribe();
+  }
+
+  private insertDb(activity: Activity) {
+    console.log(`insert() entered, activity: ${activity}`);
     this.repo.insert(mapActivityToDocument(activity)).pipe(
-      catchError((er) => {console.error(er) ;return throwError(() => activity)}),
+      catchError((er) => { console.error(er); return throwError(() => activity); })
     )
-    .subscribe({
-      next: (activity) => {this.notificationService.displayMessage('Success', `The activity ${activity.name} was added successfully`)},
-      error: (err) => {this.notificationService.displayMessage('Error', `Error on adding ${err.name}`)},
-      complete: () => {console.log(`insert() exited`)}
-    })
+      .subscribe({
+        next: (activity) => { this.notificationService.displayToastMessage('Success', `The activity ${activity.name} was added successfully`); },
+        error: (err) => { this.notificationService.displayToastMessage('Error', `Error on adding ${err.name}`); },
+        complete: () => { console.log(`insert() exited`); }
+      });
+    this.repo.insertCategory({name: activity.category}).pipe(first()).subscribe()
   }
 
   public remove(activityId: string): void {
+    from(Network.getStatus()).pipe(
+      tap(networkStaus => {
+        if (networkStaus.connected) {
+          this.activityApiService.delete(+activityId).pipe(first()).subscribe((activity: ActivityDto) => {
+            this.removeDb(activity.id.toString());
+          });
+        }
+        else {
+          this.notificationService.displayToastMessage('Error', 'Deleting a new activity is not available offline');
+        }
+      })
+    ).subscribe();
+  }
+
+  private removeDb(activityId: string) {
     console.log(`remove() entered, activityId: ${activityId}`);
     this.repo.remove(activityId).pipe(
-      catchError(() => throwError(() => activityId)),
+      catchError(() => throwError(() => activityId))
     )
-    .subscribe({
-      next: () => {this.notificationService.displayMessage('Success', `The activity was removed successfully`)},
-      error: () => this.notificationService.displayMessage('Error', `Error on removing activity`),
-      complete: () => {console.log(`remove() exited`)}
-
-    })
+      .subscribe({
+        next: () => { this.notificationService.displayToastMessage('Success', `The activity was removed successfully`); },
+        error: () => this.notificationService.displayToastMessage('Error', `Error on removing activity`),
+        complete: () => { console.log(`remove() exited`); }
+      });
   }
 
   public update(activity: Activity): void {
@@ -154,8 +169,8 @@ export class ActivityService {
       catchError(() => throwError(() => activity)),
     )
     .subscribe({
-      next: () => {this.notificationService.displayMessage('Success', `The activity ${activity.name} was updated successfully`)},
-      error: () => this.notificationService.displayMessage('Error', `Error on updating activity ${activity.name}`),
+      next: () => {this.notificationService.displayToastMessage('Success', `The activity ${activity.name} was updated successfully`)},
+      error: () => this.notificationService.displayToastMessage('Error', `Error on updating activity ${activity.name}`),
       complete: () => {console.log(`update() exited`)}
 
     })
@@ -168,7 +183,7 @@ export class ActivityService {
       map(activities => activities.sort(compareActivitiesByIntensity)),
       map(activities => activities.slice(0, 10)),
       catchError((er) => {
-        this.notificationService.displayMessage('Error', 'Error on fetching easiest activities');
+        this.notificationService.displayToastMessage('Error', 'Error on fetching easiest activities');
         console.log('getEasiest() api call error');
         return of(er);
       }),
@@ -186,6 +201,22 @@ export class ActivityService {
       finalize(() => console.log('updateIntensityAPI() api call finished'))
     )
 
+  }
+
+  public subscribeToWebsocket(): void {
+    this.activityApiService.subscribeToWebSocket().subscribe({
+      next: (activity: ActivityDto) => {
+        this.repo.getById(activity.id.toString()).pipe(
+          first(),
+        ).subscribe((result) => {
+          if (result === null) {
+            this.notificationService.displayActivityModal(mapDtoToModel(activity));
+          }
+        });
+      },
+      error: () => {},
+      complete: () => {}
+    })
   }
 
 }

@@ -1,9 +1,10 @@
-import { NotificationService } from './../../domain/service/notification.service';
-import { ActivityService } from 'src/app/domain/service/activity.service';
-import { Component, OnInit } from '@angular/core';
-import { Activity } from 'src/app/domain/model/activity';
-import { first, Observable } from 'rxjs';
 import { Location } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
+import { Observable } from 'rxjs';
+import { Activity } from 'src/app/domain/model/activity';
+import { ActivityService } from 'src/app/domain/service/activity.service';
+import { LoadingService } from './../../domain/service/loading.service';
+import { NotificationService } from './../../domain/service/notification.service';
 
 @Component({
   selector: 'app-easiest-activities',
@@ -12,7 +13,12 @@ import { Location } from '@angular/common';
 })
 export class EasiestActivitiesPage implements OnInit {
   easiestActivities$: Observable<Activity[]>;
-  constructor(private activityService: ActivityService, private location: Location, private notificationService: NotificationService) { }
+  loading$ = this.loadingService.loading$;
+  constructor(
+    private activityService: ActivityService,
+    private location: Location,
+    private notificationService: NotificationService,
+    private loadingService: LoadingService) { }
 
   ngOnInit() {
     this.easiestActivities$ = this.activityService.getEasiestActivities();
@@ -24,7 +30,7 @@ export class EasiestActivitiesPage implements OnInit {
 
   updateIntensity(intensityAndActivityId: {activityId: string; newIntensity: string}) {
     this.activityService.updateIntensityAPI(intensityAndActivityId).subscribe(() =>{
-      this.notificationService.displayMessage('Success', 'The intensity was updated!')
+      this.notificationService.displayToastMessage('Success', 'The intensity was updated!')
       this.easiestActivities$ = this.activityService.getEasiestActivities();
     });
   }

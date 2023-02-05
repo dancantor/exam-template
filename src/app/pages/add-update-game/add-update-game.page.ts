@@ -1,3 +1,4 @@
+import { LoadingService } from './../../domain/service/loading.service';
 import { ActivityService } from 'src/app/domain/service/activity.service';
 /* eslint-disable @typescript-eslint/member-ordering */
 import { Component, OnInit } from '@angular/core';
@@ -23,11 +24,12 @@ class PickDateAdapter extends NativeDateAdapter {
 })
 export class AddUpdateGamePage implements OnInit {
   activityForm: FormGroup;
-
+  loading$ = this.loadingService.loading$;
   constructor(
     private formBuilder: FormBuilder,
     private activityService: ActivityService,
-    private location: LocationStrategy
+    private location: LocationStrategy,
+    private loadingService: LoadingService
   ) {}
 
   ngOnInit() {

@@ -19,7 +19,7 @@ export class GameItemComponent implements OnInit {
 
   async onDeleteItem() {
     const deleteConfirmation = await this.alertController.create({
-      header: 'Deleting Game',
+      header: 'Deleting Activity',
       message: `Are you sure you want to delete ${this.activity.name}`,
       buttons: [
         {

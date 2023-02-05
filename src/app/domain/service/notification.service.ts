@@ -1,15 +1,18 @@
+import { ActivityItemEasyComponent } from './../../pages/easiest-activities/components/activity-item-easy/activity-item-easy.component';
+import { Activity } from 'src/app/domain/model/activity';
 import { Injectable } from '@angular/core';
-import { ToastController } from '@ionic/angular';
+import { ToastController, AlertController, ModalController } from '@ionic/angular';
 import { exhaustMap, from } from 'rxjs';
+import { format } from 'date-fns';
 
 @Injectable({
   providedIn: 'root'
 })
 export class NotificationService {
 
-  constructor(private toastController: ToastController) { }
+  constructor(private toastController: ToastController, private modalController: ModalController) { }
 
-  public displayMessage(header: string, message: string) {
+  public displayToastMessage(header: string, message: string) {
     from(this.toastController.create({
       header: header,
       message: message,
@@ -17,5 +20,15 @@ export class NotificationService {
       position: 'top',
       cssClass: 'toast'
     })).pipe(exhaustMap((toast) => from(toast.present()))).subscribe();
+  }
+
+  public displayActivityModal(activity: Activity) {
+    from(this.modalController.create({
+      component: ActivityItemEasyComponent,
+      componentProps: {activity: activity},
+      handle: true,
+      breakpoints: [.5],
+      initialBreakpoint: .5
+    })).pipe(exhaustMap((modal) => from(modal.present()))).subscribe()
   }
 }

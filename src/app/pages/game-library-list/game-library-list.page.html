@@ -5,6 +5,9 @@
 </ion-header>
 
 <ion-content>
+  <div class="spinner-container">
+    <ion-spinner name="circular" *ngIf="loading$ | async"></ion-spinner>
+  </div>
   <ion-list>
     <div class="item-with-margin" *ngFor="let category of (categoriesList$ | async)">
       <ion-item button (click)="expandCategory(category.name)">

@@ -6,7 +6,9 @@
 </ion-header>
 
 <ion-content>
-  <ion-list>
+  <div class="spinner-container">
+    <ion-spinner name="circular" *ngIf="loading$ | async"></ion-spinner>
+  </div>  <ion-list>
     <app-activity-item-easy (updateActivityEmitter)="updateIntensity($event)" *ngFor="let activity of easiestActivities$ | async" [activity]="activity">
     </app-activity-item-easy>
   </ion-list>

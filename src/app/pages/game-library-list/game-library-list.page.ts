@@ -1,3 +1,4 @@
+import { LoadingService } from './../../domain/service/loading.service';
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { first, Observable } from 'rxjs';
@@ -10,11 +11,12 @@ import { ActivityService } from 'src/app/domain/service/activity.service';
   styleUrls: ['./game-library-list.page.scss'],
 })
 export class GameLibraryListPage implements OnInit {
+  loading$ = this.loadingService.loading$;
   categoriesList$: Observable<Category[]> = this.activityService.getAllCategories();
   shouldDisplayActivities: Map<string, boolean> = new Map<string, boolean>();
   currentlyExpanded: string = '';
   activitiesByCategory$: Observable<Activity[]>;
-  constructor(private router: Router, private activityService: ActivityService) { }
+  constructor(private router: Router, private activityService: ActivityService, private loadingService: LoadingService) { }
 
   ngOnInit() {
     this.categoriesList$.pipe(first()).subscribe(categories =>
